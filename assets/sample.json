@@ -2,18 +2,34 @@
     "parcel": [
         {
             "key": "first_parcel",
+            "description": "A beautiful long parcel that shines iridescent in the sun",
             "category": "long_parcels",
             "length": 4,
             "width": 2,
             "height": 1,
             "color": "silver",
-            "opacity": "abalone shell"
+            "opacity": "like an abalone shell"
+        },
+        {
+            "key": "second_parcel",
+            "description": "A small, squat cardboard parcel",
+            "category": "square_parcels",
+            "length": 1,
+            "width": 1,
+            "height": 1,
+            "color": "beige",
+            "opacity": 0.9
         }
     ],
     "parcels": [
         {
             "key": "long_parcels",
             "description": "A collections of long parcels",
+            "rank": 2
+        },
+        {
+            "key": "square_parcels",
+            "description": "A collection of parcels that appear square-ish",
             "rank": 2
         }
     ]

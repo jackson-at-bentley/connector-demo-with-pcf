@@ -1,16 +1,55 @@
-import { DefinitionModel, DefinitionPartition, LinkModel, LinkPartition, PhysicalModel, PhysicalPartition, PhysicalElement } from "@itwin/core-backend";
+import * as path from "path";
+
 import * as pcf from "@itwin/pcf";
+
+import {
+  DefinitionModel, DefinitionPartition,
+  LinkModel, LinkPartition,
+  PhysicalModel, PhysicalPartition, PhysicalElement
+} from "@itwin/core-backend";
+
 import * as aspects from "./dmos/ElementAspects";
 import * as elements from "./dmos/Elements";
 import * as relationships from "./dmos/Relationships";
 import * as relatedElements from "./dmos/RelatedElements";
-import * as path from "path";
+
+import * as sync from "./Synchronize";
+
+import { GeometryStreamBuilder, GeometryParams } from "@itwin/core-common";
+import { Box, Point3d, PointString3d, Vector3d } from "@itwin/core-geometry";
 
 export const Parcel: pcf.ElementDMO = {
   irEntity: "parcel",
   ecElement: "Generic:PhysicalObject",
   modifyProps(_: pcf.PConnector, props: any, instance: pcf.IRInstance) {
-    props.userLabel = instance.key;
+    props.userLabel = instance.data.description;
+
+    // Unsafe, instance :: { [property: string]: any }.
+    const parcel = instance.data as sync.Parcel;
+    const element = sync.synchronize(parcel);
+
+    if (element.color) {
+      props.color = parcel.color;
+    }
+
+    if (element.opacity) {
+      props.opacity = parcel.opacity;
+    }
+
+    const toPoint = (triple: [number, number, number]) => new Point3d(triple[0], triple[1], triple[2]);
+
+    const points = PointString3d.create(
+      element.faces.flat().map(triple => toPoint(triple))
+    );
+
+    const builder = new GeometryStreamBuilder();
+    builder.appendGeometryParamsChange(new GeometryParams(props.category));
+
+    builder.appendGeometry(points);
+
+    props.geom = builder.geometryStream;
+
+    console.log(props);
   },
   categoryAttr: "category",
 };
@@ -67,20 +106,32 @@ export class FaceConnector extends pcf.PConnector {
       partitionClass: DefinitionPartition,
     });
 
-    const parcelCategory = new pcf.ElementNode(this, {
+    const longParcels = new pcf.ElementNode(this, {
       key: "long_parcels",
       model: categoryDefinition,
       dmo: ParcelCategory
     });
 
-    const first_parcel = new pcf.ElementNode(this, {
+    const squareParcels = new pcf.ElementNode(this, {
+      key: "square_parcels",
+      model: categoryDefinition,
+      dmo: ParcelCategory
+    });
+
+    const firstParcel = new pcf.ElementNode(this, {
       key: "first_parcel",
       model: physicalModel,
       dmo: Parcel,
-      category: parcelCategory
+      category: longParcels
+    });
+
+    const secondParcel = new pcf.ElementNode(this, {
+      key: "secondParcel",
+      model: physicalModel,
+      dmo: Parcel,
+      category: squareParcels
     });
   }
-
 }
 
 export async function getConnectorInstance() {
